@@ -4,13 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const body = await request.json()
-  const { email, song_name, artist_name } = body
+  const { email, song_name, artist_name, spotify_url, thumbnail_url, youtube_search_url } = body
 
   if (!email || !song_name) {
     return NextResponse.json({ error: 'Email and song name are required.' }, { status: 400 })
   }
 
-  // Check for existing submission
   const { data: existing } = await supabase
     .from('friend_submissions')
     .select('id')
@@ -27,6 +26,9 @@ export async function POST(request: NextRequest) {
       email: email.toLowerCase().trim(),
       song_name: song_name.trim(),
       artist_name: artist_name?.trim() ?? null,
+      spotify_url: spotify_url ?? null,
+      thumbnail_url: thumbnail_url ?? null,
+      youtube_search_url: youtube_search_url ?? null,
     })
 
   if (error) {
