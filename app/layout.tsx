@@ -4,6 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "My Musical Journal",
   description: "A personal record of music that moved me",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Music Journal",
+  },
 };
 
 export default function RootLayout({
