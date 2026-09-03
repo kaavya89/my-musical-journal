@@ -181,6 +181,9 @@ export default function TimelinePage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 py-12">
+        <p className="text-sm italic leading-relaxed mb-10 max-w-xl" style={{ color: "var(--muted)", fontStyle: "italic" }}>
+          This timeline shows my listening history with specific picks of the songs that mattered to me and ones I keep coming back to. The timeline is also a journal with tidbits on the songs themselves and why I liked them.
+        </p>
         {loading && (
           <div className="text-center py-20 text-sm" style={{ color: 'var(--muted)' }}>
             Loading your journal…
