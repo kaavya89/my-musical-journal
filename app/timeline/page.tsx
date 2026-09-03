@@ -29,110 +29,114 @@ function groupByMonth(tracks: Track[]) {
 }
 
 function TrackCard({ track, onDelete }: { track: Track; onDelete: (id: string) => void }) {
-  const [hovered, setHovered] = useState(false)
+  const [open, setOpen] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
 
   return (
-    <div
-      className="relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200"
-      style={{ aspectRatio: '1', background: 'var(--card)', border: '1px solid var(--border)' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setShowDelete(false) }}
-    >
-      {track.thumbnail_url ? (
-        <Image
-          src={track.thumbnail_url}
-          alt={track.title}
-          fill
-          className="object-cover"
-          sizes="200px"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: 'var(--border)' }}>
-          🎵
-        </div>
-      )}
-
-      {/* Overlay */}
-      {hovered && (
-        <div
-          className="absolute inset-0 flex flex-col justify-end p-3 transition-all"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 60%, rgba(0,0,0,0.2) 100%)' }}
-        >
+    <>
+      {/* Thumbnail grid card */}
+      <div
+        onClick={() => setOpen(true)}
+        className="relative rounded-xl overflow-hidden cursor-pointer group"
+        style={{ aspectRatio: '1', background: 'var(--card)', border: '1px solid var(--border)' }}
+      >
+        {track.thumbnail_url ? (
+          <Image src={track.thumbnail_url} alt={track.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="200px"/>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: 'var(--border)' }}>🎵</div>
+        )}
+        {/* Hover overlay — just title, no truncated notes */}
+        <div className="absolute inset-0 flex flex-col justify-end p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 50%, transparent 100%)' }}>
           <div className="text-xs font-semibold text-white truncate">{track.title}</div>
-          <div className="text-xs text-gray-400 truncate mb-1">{track.artist}</div>
-
-          {track.notes && (
-            <div
-              className="text-xs text-gray-300 leading-relaxed mb-2 overflow-y-auto"
-              style={{ maxHeight: '80px', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-            >
-              {track.notes}
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 mt-1">
-            {track.spotify_url && (
-              <a
-                href={track.spotify_url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{ background: 'var(--accent)', color: '#000' }}
-              >
-                Spotify
-              </a>
-            )}
-            {track.youtube_search_url && (
-              <a
-                href={track.youtube_search_url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
-              >
-                YouTube
-              </a>
-            )}
-            <button
-              onClick={e => { e.stopPropagation(); setShowDelete(true) }}
-              className="ml-auto text-xs px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.1)', color: '#aaa' }}
-            >
-              ···
-            </button>
-          </div>
+          <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.6)' }}>{track.artist}</div>
         </div>
-      )}
+      </div>
 
-      {/* Delete confirm */}
-      {showDelete && (
+      {/* Full modal */}
+      {open && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-          style={{ background: 'rgba(0,0,0,0.9)' }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.8)' }}
+          onClick={() => { setOpen(false); setShowDelete(false) }}
         >
-          <p className="text-xs text-white text-center px-2">Remove from journal?</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onDelete(track.id)}
-              className="text-xs px-3 py-1 rounded-full text-white"
-              style={{ background: '#ef4444' }}
-            >
-              Remove
-            </button>
-            <button
-              onClick={() => setShowDelete(false)}
-              className="text-xs px-3 py-1 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
-            >
-              Cancel
-            </button>
+          <div
+            className="w-full max-w-sm rounded-2xl overflow-hidden"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Album art — square */}
+            {track.thumbnail_url && (
+              <div className="relative w-full" style={{ aspectRatio: '1' }}>
+                <Image src={track.thumbnail_url} alt={track.title} fill className="object-cover"/>
+              </div>
+            )}
+
+            <div className="p-5">
+              {/* Track info */}
+              <div className="text-base font-semibold mb-0.5" style={{ color: 'var(--foreground)' }}>{track.title}</div>
+              <div className="text-sm mb-0.5" style={{ color: 'var(--muted)' }}>{track.artist}</div>
+              {track.album && (
+                <div className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{track.album}</div>
+              )}
+              <div className="text-xs mb-4" style={{ color: 'var(--muted)' }}>
+                Added {new Date(track.added_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </div>
+
+              {/* Full notes — no truncation */}
+              {track.notes && (
+                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--foreground)', whiteSpace: 'pre-wrap' }}>
+                  {track.notes}
+                </p>
+              )}
+
+              {/* Links */}
+              <div className="flex items-center gap-2">
+                {track.spotify_url && (
+                  <a href={track.spotify_url} target="_blank" rel="noreferrer"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold"
+                    style={{ background: 'var(--accent)', color: '#000' }}>
+                    Spotify ↗
+                  </a>
+                )}
+                {track.youtube_search_url && (
+                  <a href={track.youtube_search_url} target="_blank" rel="noreferrer"
+                    className="px-4 py-2 rounded-xl text-xs"
+                    style={{ background: 'var(--border)', color: 'var(--foreground)' }}>
+                    YouTube ↗
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowDelete(!showDelete)}
+                  className="ml-auto text-xs px-3 py-2 rounded-xl"
+                  style={{ background: 'var(--border)', color: 'var(--muted)' }}>
+                  Remove
+                </button>
+              </div>
+
+              {/* Delete confirm */}
+              {showDelete && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs" style={{ color: 'var(--muted)' }}>Are you sure?</span>
+                  <button
+                    onClick={() => { onDelete(track.id); setOpen(false) }}
+                    className="text-xs px-3 py-1 rounded-full text-white"
+                    style={{ background: '#ef4444' }}>
+                    Yes, remove
+                  </button>
+                  <button
+                    onClick={() => setShowDelete(false)}
+                    className="text-xs px-3 py-1 rounded-full"
+                    style={{ background: 'var(--border)', color: 'var(--foreground)' }}>
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -164,7 +168,6 @@ export default function TimelinePage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      {/* Nav */}
       <nav className="border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10" style={{ borderColor: 'var(--border)', background: 'var(--background)' }}>
         <div className="flex items-center gap-6">
           <span className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>🎵 My Musical Journal</span>
@@ -189,11 +192,7 @@ export default function TimelinePage() {
             <div className="text-5xl mb-4">🎵</div>
             <h2 className="text-lg font-medium mb-2" style={{ color: 'var(--foreground)' }}>Your journal is empty</h2>
             <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>Start adding tracks you love</p>
-            <a
-              href="/journal"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ background: 'var(--accent)', color: '#000' }}
-            >
+            <a href="/journal" className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ background: 'var(--accent)', color: '#000' }}>
               Add your first track
             </a>
           </div>
