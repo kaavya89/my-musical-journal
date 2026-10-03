@@ -35,6 +35,33 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // YouTube links are only accepted when the caller opts in (friends page)
+    if (request.nextUrl.searchParams.get('yt') === '1') {
+      const ytMatch = query.match(
+        /(?:youtube\.com\/(?:watch\?(?:[^\s#]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+      )
+      if (ytMatch) {
+        const videoUrl = `https://www.youtube.com/watch?v=${ytMatch[1]}`
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`
+        )
+        if (!res.ok) return NextResponse.json({ results: [] })
+        const info = await res.json()
+        return NextResponse.json({
+          results: [{
+            id: ytMatch[1],
+            type: 'track',
+            title: info.title ?? 'YouTube video',
+            artist: (info.author_name ?? '').replace(/ - Topic$/, ''),
+            album: '',
+            thumbnail: info.thumbnail_url ?? `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`,
+            spotify_url: null,
+            youtube_search_url: videoUrl,
+          }],
+        })
+      }
+    }
+
     // Check if it's a Spotify URL
     const spotifyUrlMatch = query.match(
       /spotify\.com\/(track|album)\/([a-zA-Z0-9]+)/
@@ -78,8 +105,10 @@ export async function GET(request: NextRequest) {
     } else {
       // Text search
       const token = await getSpotifyToken()
+      const kind = request.nextUrl.searchParams.get('kind')
+      const types = kind === 'album' ? 'album' : kind === 'track' ? 'track' : 'track,album'
       const res = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track,album&limit=5`,
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${types}&limit=${types.includes(',') ? 5 : 6}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       const data = await res.json()

@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# database scripts and handoff notes (kept locally, not published)
+supabase-*.sql
+HANDOFF.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
