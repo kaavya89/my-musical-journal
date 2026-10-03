@@ -5,24 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 
-const C = {
-  bg:      '#FBF6EF',
-  surface: '#F0E8DC',
-  border:  '#E0D4C0',
-  text:    '#2C2A24',
-  muted:   '#8C7E6E',
-  faint:   '#BBA99A',
-  accent:  '#1db954',
-}
-
-const gridBg = {
-  backgroundColor: C.bg,
-  backgroundImage: `
-    linear-gradient(rgba(180,158,138,0.10) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(180,158,138,0.10) 1px, transparent 1px)
-  `,
-  backgroundSize: '28px 28px',
-} as React.CSSProperties
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const SHORT   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 interface Track {
   id: string
@@ -36,282 +20,278 @@ interface Track {
   added_at: string
 }
 
-function groupByMonth(tracks: Track[]) {
-  const groups: Record<string, Track[]> = {}
-  for (const track of tracks) {
-    const date = new Date(track.added_at)
-    const key = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    if (!groups[key]) groups[key] = []
-    groups[key].push(track)
-  }
+interface EnrichedTrack extends Track {
+  no: number
+  dayLabel: string
+}
+
+interface MonthGroup {
+  id: string
+  name: string
+  abbr: string
+  year: number
+  tracks: EnrichedTrack[]
+  countLabel: string
+}
+
+function buildMonths(tracks: Track[], total: number): MonthGroup[] {
+  const groups: MonthGroup[] = []
+  tracks.forEach((track, i) => {
+    const d = new Date(track.added_at)
+    const mo = d.getMonth()
+    const year = d.getFullYear()
+    const id = `m-${year}-${String(mo + 1).padStart(2, '0')}`
+    let g = groups[groups.length - 1]
+    if (!g || g.id !== id) {
+      g = { id, name: MONTHS[mo], abbr: SHORT[mo], year, tracks: [], countLabel: '' }
+      groups.push(g)
+    }
+    g.tracks.push({ ...track, no: total - i, dayLabel: `${d.getDate()} ${SHORT[mo]}` })
+  })
+  groups.forEach(g => { g.countLabel = g.tracks.length === 1 ? '1 entry' : `${g.tracks.length} entries` })
   return groups
 }
 
-/* ── Grid tile ── */
-function TrackCard({
-  track,
-  delay,
-  onSelect,
-}: {
-  track: Track
-  delay: number
-  onSelect: (t: Track) => void
-}) {
+function splitNotes(n: string): [string, string] {
+  n = n.trim()
+  if (n.length <= 160) return [n, '']
+  const m = n.match(/^[\s\S]{20,220}?[.!?](?=\s)/)
+  if (!m) return ['', n]
+  return [m[0], n.slice(m[0].length).trim()]
+}
+
+function ytUrl(track: Track) {
+  return track.youtube_search_url
+    ?? `https://www.youtube.com/results?search_query=${encodeURIComponent(`${track.title} ${track.artist.split(',')[0]}`)}`
+}
+
+// ── Track card ────────────────────────────────────────────
+function TrackCard({ track, onSelect }: { track: EnrichedTrack; onSelect: () => void }) {
   return (
-    <div
-      className="reveal-child"
-      style={{ animationDelay: `${delay}ms`, cursor: 'pointer' }}
-      onClick={() => onSelect(track)}
-    >
-      <div
-        style={{
-          aspectRatio: '1',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          border: `0.5px solid ${C.border}`,
-          marginBottom: '8px',
-          position: 'relative',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'scale(1.04)'
-          el.style.boxShadow = '0 8px 24px rgba(44,42,36,0.12)'
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'scale(1)'
-          el.style.boxShadow = 'none'
-        }}
-      >
-        {track.thumbnail_url ? (
-          <Image src={track.thumbnail_url} alt={track.title} fill className="object-cover" sizes="200px" />
-        ) : (
-          <div style={{ width: '100%', height: '100%', background: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
-            🎵
+    <button className="tl-card" onClick={onSelect}>
+      <div className="tl-art">
+        {/* Vinyl disc behind cover */}
+        <div className="tl-disc">
+          {track.thumbnail_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={track.thumbnail_url} alt="" />
+          )}
+        </div>
+        {/* Cover in front */}
+        <div className="tl-cover-wrap">
+          {track.thumbnail_url ? (
+            <Image
+              src={track.thumbnail_url}
+              fill
+              alt={`Cover art for ${track.title}`}
+              sizes="(max-width: 820px) 50vw, 220px"
+              style={{ objectFit: 'cover' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: '#F0E8DC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>🎵</div>
+          )}
+        </div>
+      </div>
+
+      {/* Text below art */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', width: '100%', minWidth: 0 }}>
+        <div style={{ font: '600 12px/1 var(--fu)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6f6253' }}>
+          No. {track.no} · {track.dayLabel}
+        </div>
+        <div className="tl-ctitle">{track.title}</div>
+        <div style={{ font: '500 14px/1.45 var(--fu)', color: '#6f6253' }}>{track.artist}</div>
+        {track.notes && (
+          <div className="tl-ex" style={{ fontFamily: 'var(--fn)', fontStyle: 'italic', fontSize: '17px', lineHeight: 1.5, color: '#4a4239', marginTop: '2px' }}>
+            {track.notes}
           </div>
         )}
       </div>
-      <div style={{ fontSize: '12px', fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>
-        {track.title}
-      </div>
-      <div style={{ fontSize: '11px', color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {track.artist}
+    </button>
+  )
+}
+
+// ── Detail overlay ────────────────────────────────────────
+function DetailOverlay({
+  track, total, older, newer, isOwner,
+  onClose, onOlder, onNewer, onDelete,
+}: {
+  track: EnrichedTrack
+  total: number
+  older: EnrichedTrack | null
+  newer: EnrichedTrack | null
+  isOwner: boolean
+  onClose: () => void
+  onOlder: () => void
+  onNewer: () => void
+  onDelete: (id: string) => void
+}) {
+  const [showDelete, setShowDelete] = useState(false)
+  const [lead, rest] = splitNotes(track.notes ?? '')
+  const isShort = !!lead && !rest
+  const d = new Date(track.added_at)
+  const dateLabel = `${d.getDate()} ${SHORT[d.getMonth()]} ${d.getFullYear()}`
+
+  return (
+    <div className="tl-overlay" role="dialog" aria-modal aria-label="Journal entry">
+      <div className="dt">
+
+        {/* ── Left: art panel ── */}
+        <div className="dt-art">
+          {track.thumbnail_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="dt-bg" src={track.thumbnail_url} alt="" />
+          )}
+
+          {/* Back button */}
+          <div style={{ position: 'absolute', left: 24, right: 24, top: 24, display: 'flex', zIndex: 2 }}>
+            <button className="dt-glass" onClick={onClose}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Timeline
+            </button>
+          </div>
+
+          {/* Spinning disc + cover */}
+          <div className="dt-stage">
+            <div className="dt-slide">
+              <div className="dt-disc">
+                {track.thumbnail_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="dt-disc-img" src={track.thumbnail_url} alt="" />
+                )}
+              </div>
+            </div>
+            <div className="dt-cover-wrap">
+              {track.thumbnail_url && (
+                <Image src={track.thumbnail_url} fill alt={`Cover for ${track.title}`} sizes="50vw" style={{ objectFit: 'cover' }} />
+              )}
+            </div>
+          </div>
+
+          {/* Earlier / Later nav */}
+          {(older || newer) && (
+            <div style={{ position: 'absolute', left: 24, right: 24, bottom: 24, display: 'flex', justifyContent: 'space-between', gap: 12, zIndex: 2 }}>
+              {older ? (
+                <button className="dt-step" onClick={onOlder}>
+                  {older.thumbnail_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={older.thumbnail_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+                    <span style={{ font: '600 11px/1 var(--fu)', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6f6253' }}>Earlier</span>
+                    <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', font: '500 15px/1.25 var(--fu)' }}>{older.title}</span>
+                  </span>
+                </button>
+              ) : <span />}
+              {newer && (
+                <button className="dt-step dt-step-r" onClick={onNewer}>
+                  {newer.thumbnail_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={newer.thumbnail_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0, alignItems: 'flex-end' }}>
+                    <span style={{ font: '600 11px/1 var(--fu)', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6f6253' }}>Later</span>
+                    <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', font: '500 15px/1.25 var(--fu)' }}>{newer.title}</span>
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Right: notes panel ── */}
+        <article className="dt-page">
+          {/* Header row */}
+          <div className="dt-head dt-up">
+            <div className="dt-meta" style={{ color: '#6f6253' }}>
+              No. {track.no} of {total} · {dateLabel}
+            </div>
+            <button className="dt-x" aria-label="Close entry" onClick={onClose}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Title block */}
+          <div className="dt-up dt-d1" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h1 className="dt-title">{track.title}</h1>
+            {track.album && <div className="dt-src">{track.album}</div>}
+            <div className="dt-artist">{track.artist}</div>
+          </div>
+
+          {/* Notes */}
+          <div className={`dt-note dt-up dt-d2${isShort ? ' dt-note-short' : ''}`}>
+            {lead && (
+              <blockquote className={`dt-lead${isShort ? ' dt-lead-big' : ''}`} style={{ margin: 0 }}>
+                <span style={{ color: '#8c7e6e' }} aria-hidden="true">&ldquo;</span>
+                {lead}
+                {isShort && <span style={{ color: '#8c7e6e' }} aria-hidden="true">&rdquo;</span>}
+              </blockquote>
+            )}
+            {rest && <p className="dt-rest">{rest}</p>}
+          </div>
+
+          {/* Actions */}
+          <div className="dt-actions dt-up dt-d3">
+            {track.spotify_url && (
+              <a className="dt-btn dt-play" href={track.spotify_url} target="_blank" rel="noopener noreferrer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+                Listen on Spotify
+              </a>
+            )}
+            <a className="dt-btn dt-sec" href={ytUrl(track)} target="_blank" rel="noopener noreferrer">
+              Find on YouTube
+            </a>
+            {isOwner && !showDelete && (
+              <button
+                onClick={() => setShowDelete(true)}
+                style={{ background: 'none', border: 'none', color: '#8c7e6e', font: '600 13px/1 var(--fu)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+              >
+                Remove
+              </button>
+            )}
+            {isOwner && showDelete && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                <span style={{ fontSize: '14px', color: '#6f6253', fontFamily: 'var(--fu)' }}>Remove this track?</span>
+                <button onClick={() => { onDelete(track.id); onClose() }} style={{ padding: '8px 16px', borderRadius: 999, background: '#c0392b', color: '#fff', border: 'none', font: '600 13px/1 var(--fu)', cursor: 'pointer' }}>Yes</button>
+                <button onClick={() => setShowDelete(false)} style={{ padding: '8px 16px', borderRadius: 999, background: 'rgba(44,42,36,.08)', color: '#2c2a24', border: 'none', font: '600 13px/1 var(--fu)', cursor: 'pointer' }}>Cancel</button>
+              </div>
+            )}
+          </div>
+        </article>
       </div>
     </div>
   )
 }
 
-/* ── Detail drawer ── */
-function TrackDrawer({
-  track,
-  isOwner,
-  onClose,
-  onDelete,
-}: {
-  track: Track
-  isOwner: boolean
-  onClose: () => void
-  onDelete: (id: string) => void
-}) {
-  const [showDelete, setShowDelete] = useState(false)
-
-  function handleDelete() {
-    onDelete(track.id)
-    onClose()
-  }
-
+// ── Month map sidebar ─────────────────────────────────────
+function MonthMap({ months, activeId }: { months: MonthGroup[]; activeId: string }) {
   return (
-    <>
-      {/* Backdrop + centering container */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 40,
-          background: 'rgba(44,42,36,0.28)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-        }}
-      >
-      {/* Centered panel */}
-      <div
-        className="drawer-enter"
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          maxHeight: '88vh',
-          borderRadius: '20px',
-          ...gridBg,
-          border: `0.5px solid ${C.border}`,
-          boxShadow: '0 24px 56px rgba(44,42,36,0.20)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
-        }}
-      >
-        {/* Close button */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 1, display: 'flex', justifyContent: 'flex-end', padding: '14px 16px 0' }}>
-          <button
-            onClick={onClose}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              border: `0.5px solid ${C.border}`,
-              background: C.bg,
-              color: C.muted,
-              fontSize: '16px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Album art — full width */}
-        {track.thumbnail_url && (
-          <div style={{ position: 'relative', width: '100%', aspectRatio: '1', flexShrink: 0 }}>
-            <Image src={track.thumbnail_url} alt={track.title} fill className="object-cover" sizes="400px" />
-          </div>
-        )}
-
-        {/* Details */}
-        <div style={{ padding: '24px 24px 40px' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: C.text, marginBottom: '4px', lineHeight: 1.3 }}>
-            {track.title}
-          </div>
-          <div style={{ fontSize: '14px', color: C.muted, marginBottom: '2px' }}>{track.artist}</div>
-          {track.album && (
-            <div style={{ fontSize: '12px', color: C.faint, marginBottom: '4px' }}>{track.album}</div>
-          )}
-          <div style={{ fontSize: '11px', color: C.faint, marginBottom: '24px' }}>
-            Added {new Date(track.added_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-          </div>
-
-          {/* Notes — full, no truncation, scrolls naturally with drawer */}
-          {track.notes && (
-            <div
-              style={{
-                borderLeft: `2px solid ${C.border}`,
-                paddingLeft: '16px',
-                marginBottom: '28px',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: '14px',
-                  lineHeight: 1.8,
-                  color: C.text,
-                  fontStyle: 'italic',
-                  fontFamily: 'Georgia, "Times New Roman", serif',
-                  whiteSpace: 'pre-wrap',
-                  margin: 0,
-                }}
-              >
-                {track.notes}
-              </p>
-            </div>
-          )}
-
-          {/* Links */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: isOwner ? '20px' : 0 }}>
-            {track.spotify_url && (
-              <a
-                href={track.spotify_url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  background: C.accent,
-                  color: '#fff',
-                  textDecoration: 'none',
-                }}
-              >
-                Open in Spotify ↗
-              </a>
-            )}
-            {track.youtube_search_url && (
-              <a
-                href={track.youtube_search_url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  fontSize: '13px',
-                  background: C.surface,
-                  color: C.muted,
-                  border: `0.5px solid ${C.border}`,
-                  textDecoration: 'none',
-                }}
-              >
-                Search YouTube ↗
-              </a>
-            )}
-          </div>
-
-          {/* Remove — owner only */}
-          {isOwner && !showDelete && (
-            <button
-              onClick={() => setShowDelete(true)}
-              style={{
-                fontSize: '12px',
-                color: C.faint,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px 0',
-                textDecoration: 'underline',
-                textUnderlineOffset: '3px',
-              }}
-            >
-              Remove from journal
-            </button>
-          )}
-          {isOwner && showDelete && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-              <span style={{ fontSize: '12px', color: C.muted }}>Remove this track?</span>
-              <button
-                onClick={handleDelete}
-                style={{ fontSize: '12px', padding: '5px 14px', borderRadius: '20px', background: '#c0392b', color: '#fff', border: 'none', cursor: 'pointer' }}
-              >
-                Yes, remove
-              </button>
-              <button
-                onClick={() => setShowDelete(false)}
-                style={{ fontSize: '12px', padding: '5px 14px', borderRadius: '20px', background: C.surface, color: C.muted, border: `0.5px solid ${C.border}`, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      </div>
-    </>
+    <nav className="tl-map" aria-label="Jump to month">
+      {months.map(m => (
+        <a key={m.id} className={`tl-mrow${m.id === activeId ? ' tl-mrow-on' : ''}`} href={`#${m.id}`} title={`${m.name} ${m.year}`}>
+          <span style={{ width: 26, display: 'block' }}>{m.abbr}</span>
+          <span className="tl-mdots">
+            {m.tracks.slice(0, 3).map(t => t.thumbnail_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={t.id} src={t.thumbnail_url} alt="" />
+            ))}
+          </span>
+        </a>
+      ))}
+    </nav>
   )
 }
 
-/* ── Page ── */
+// ── Page ──────────────────────────────────────────────────
 export default function TimelinePage() {
-  const [tracks, setTracks] = useState<Track[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isOwner, setIsOwner] = useState(false)
-  const [selected, setSelected] = useState<Track | null>(null)
+  const [tracks, setTracks]       = useState<Track[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [isOwner, setIsOwner]     = useState(false)
+  const [selIdx, setSelIdx]       = useState<number | null>(null)
+  const [activeId, setActiveId]   = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -323,26 +303,36 @@ export default function TimelinePage() {
       .catch(() => setLoading(false))
   }, [])
 
+  // Active month tracking via scroll
   useEffect(() => {
-    if (loading) return
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-revealed') }),
-      { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }
-    )
-    document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
-  }, [loading])
+    if (loading || !tracks.length) return
+    const months = buildMonths(tracks, tracks.length)
+    const ids = months.map(m => m.id)
+    if (ids.length) setActiveId(ids[0])
+    const onScroll = () => {
+      let act = ids[0]
+      const line = window.innerHeight * 0.35
+      for (const id of ids) {
+        const el = document.getElementById(id)
+        if (el && el.getBoundingClientRect().top <= line) act = id
+      }
+      setActiveId(act)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [loading, tracks])
 
-  // Close drawer with Escape
+  // Escape key closes overlay
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelIdx(null) }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
   }, [])
 
   async function handleDelete(id: string) {
     await fetch(`/api/tracks?id=${id}`, { method: 'DELETE' })
     setTracks(prev => prev.filter(t => t.id !== id))
+    setSelIdx(null)
   }
 
   async function handleSignOut() {
@@ -350,97 +340,127 @@ export default function TimelinePage() {
     router.push('/login')
   }
 
-  const grouped = groupByMonth(tracks)
-  const months = Object.keys(grouped)
+  const total    = tracks.length
+  const months   = buildMonths(tracks, total)
+  const allFlat  = months.flatMap(m => m.tracks)   // newest-first
+  const selected = selIdx !== null ? allFlat[selIdx] : null
+  const older    = selIdx !== null && selIdx < allFlat.length - 1 ? allFlat[selIdx + 1] : null
+  const newer    = selIdx !== null && selIdx > 0 ? allFlat[selIdx - 1] : null
+
+  const first = tracks[tracks.length - 1]
+  const last  = tracks[0]
+  const span  = first && last
+    ? `${SHORT[new Date(first.added_at).getMonth()]}–${SHORT[new Date(last.added_at).getMonth()]} ${new Date(last.added_at).getFullYear()}`
+    : ''
+
+  const pageBg: React.CSSProperties = {
+    backgroundColor: '#fbf6ef',
+    backgroundImage: `linear-gradient(rgba(180,158,138,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(180,158,138,.1) 1px,transparent 1px)`,
+    backgroundSize: '28px 28px',
+  }
 
   return (
-    <div style={{ ...gridBg, minHeight: '100vh', color: C.text }}>
-      {/* Nav */}
-      <nav style={{
-        borderBottom: `0.5px solid ${C.border}`,
-        padding: '14px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        ...gridBg,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: C.text }}>🎵 My Musical Journal</span>
-          <a href="/journal" style={{ fontSize: '12px', color: C.muted, textDecoration: 'none' }}>Add Track</a>
-          <a href="/timeline" style={{ fontSize: '12px', color: C.accent, fontWeight: 500, textDecoration: 'none' }}>Timeline</a>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '11px', color: C.faint }}>{tracks.length} tracks</span>
-          {isOwner && (
-            <button onClick={handleSignOut} style={{ fontSize: '11px', color: C.faint, background: 'none', border: 'none', cursor: 'pointer' }}>
-              Sign out
-            </button>
-          )}
-        </div>
-      </nav>
+    <div style={{ ...pageBg, minHeight: '100vh', color: '#2c2a24' }}>
+      <div className="tl-wrap" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', boxSizing: 'border-box' }}>
 
-      {/* Hero quote */}
-      <section style={{ maxWidth: '600px', margin: '0 auto', padding: '80px 24px 48px', textAlign: 'center' }}>
-        <div style={{ fontSize: '80px', color: C.border, lineHeight: 0.8, fontFamily: 'Georgia, serif', marginBottom: '8px', userSelect: 'none' }}>
-          &#8220;
-        </div>
-        <p style={{ fontSize: '18px', fontStyle: 'italic', color: C.muted, lineHeight: 1.75, fontFamily: 'Georgia, "Times New Roman", serif' }}>
-          This timeline shows my listening history with specific picks of the songs that mattered to me and ones I keep coming back to. The timeline is also a journal with tidbits on the songs themselves and why I liked them.
-        </p>
-        <div style={{ fontSize: '80px', color: C.border, lineHeight: 0.8, fontFamily: 'Georgia, serif', marginTop: '8px', userSelect: 'none' }}>
-          &#8221;
-        </div>
-      </section>
+        {/* Header */}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px 24px', padding: '24px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
+            <div className="tl-display" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 22 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <circle cx="12" cy="12" r="9.5" />
+                <circle cx="12" cy="12" r="3" />
+                <circle cx="12" cy="12" r=".6" fill="currentColor" />
+              </svg>
+              My Musical Journal
+            </div>
+            <nav aria-label="Primary" style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+              <a className="tl-nav tl-nav-on" href="/timeline" aria-current="page">Timeline</a>
+              <a className="tl-nav" href="/journal">Add track</a>
+              {isOwner && (
+                <button className="tl-nav" onClick={handleSignOut}>Sign out</button>
+              )}
+            </nav>
+          </div>
+          <div style={{ font: '500 14px/1 var(--fu)', color: '#6f6253' }}>
+            {total} tracks{span ? ` · ${span}` : ''}
+          </div>
+        </header>
 
-      {/* Divider */}
-      <div style={{ width: '48px', height: '1.5px', background: C.faint, margin: '0 auto 72px', borderRadius: '2px' }} />
+        {/* Hero */}
+        <section style={{ padding: '72px 0 64px', display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 860 }}>
+          <h1 className="tl-display" style={{ margin: 0, fontSize: 'clamp(42px,6.4vw,92px)', lineHeight: 0.96, textWrap: 'balance' }}>
+            The songs that mattered, and the ones I keep coming back to.
+          </h1>
+          <p style={{ margin: 0, fontFamily: 'var(--fn)', fontStyle: 'italic', fontSize: 'clamp(18px,2vw,22px)', lineHeight: 1.55, color: '#5b5145' }}>
+            My listening history, one pick at a time. Each cover opens a page from the journal: a few lines on the song and why it stayed with me.
+          </p>
+        </section>
 
-      {/* Timeline */}
-      <main style={{ maxWidth: '860px', margin: '0 auto', padding: '0 24px 100px' }}>
+        {/* Loading */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '80px 0', fontSize: '13px', color: C.faint }}>
+          <div style={{ padding: '80px 0', fontSize: 14, color: '#8c7e6e', fontFamily: 'var(--fu)' }}>
             Loading your journal…
           </div>
         )}
 
-        {!loading && tracks.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎵</div>
-            <h2 style={{ fontSize: '17px', fontWeight: 500, color: C.text, marginBottom: '8px' }}>Your journal is empty</h2>
-            <p style={{ fontSize: '13px', color: C.muted, marginBottom: '24px' }}>Start adding tracks you love</p>
-            <a href="/journal" style={{ padding: '10px 22px', borderRadius: '24px', fontSize: '13px', fontWeight: 600, background: C.accent, color: '#fff', textDecoration: 'none' }}>
-              Add your first track
-            </a>
-          </div>
-        )}
-
+        {/* Month sections */}
         {months.map(month => (
-          <section key={month} data-reveal style={{ marginBottom: '64px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.faint, flexShrink: 0 }}>
-                {month}
+          <section
+            key={month.id}
+            id={month.id}
+            className="tl-month"
+            aria-label={`${month.name} ${month.year}`}
+          >
+            {/* Sticky month rail */}
+            <div className="tl-rail">
+              <h2 className="tl-display" style={{ margin: 0, fontSize: 'clamp(34px,4vw,54px)', lineHeight: 0.95 }}>
+                {month.name}
               </h2>
-              <div style={{ flex: 1, height: '0.5px', background: C.border }} />
+              <div style={{ font: '500 14px/1.4 var(--fu)', color: '#6f6253' }}>
+                {month.year} · {month.countLabel}
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '16px' }}>
-              {grouped[month].map((track, i) => (
-                <TrackCard key={track.id} track={track} delay={i * 60} onSelect={setSelected} />
-              ))}
+            {/* Cards grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: '56px 36px' }}>
+              {month.tracks.map(track => {
+                const flatIdx = allFlat.findIndex(t => t.id === track.id)
+                return (
+                  <TrackCard key={track.id} track={track} onSelect={() => setSelIdx(flatIdx)} />
+                )
+              })}
             </div>
           </section>
         ))}
-      </main>
 
-      {/* Drawer */}
-      {selected && (
-        <TrackDrawer
+        {/* Footer */}
+        {!loading && total > 0 && (
+          <footer style={{ padding: '64px 0 96px', borderTop: '1px solid rgba(44,42,36,.12)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ fontFamily: 'var(--fn)', fontStyle: 'italic', fontSize: 26, color: '#5b5145' }}>More to come.</div>
+            <a href="/journal" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 24px', borderRadius: 999, background: '#2c2a24', color: '#fbf6ef', textDecoration: 'none', font: '600 15px/1 var(--fu)' }}>
+              Add a track
+            </a>
+          </footer>
+        )}
+      </div>
+
+      {/* Sidebar month map */}
+      {!loading && months.length > 1 && (
+        <MonthMap months={months} activeId={activeId} />
+      )}
+
+      {/* Detail overlay */}
+      {selected && selIdx !== null && (
+        <DetailOverlay
           track={selected}
+          total={total}
+          older={older}
+          newer={newer}
           isOwner={isOwner}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelIdx(null)}
+          onOlder={() => setSelIdx(i => i !== null ? i + 1 : null)}
+          onNewer={() => setSelIdx(i => i !== null ? i - 1 : null)}
           onDelete={handleDelete}
         />
       )}
