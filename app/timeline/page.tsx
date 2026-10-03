@@ -368,7 +368,16 @@ export default function TimelinePage() {
   const months = Object.keys(grouped)
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', color: C.text }}>
+    <div style={{
+      backgroundColor: C.bg,
+      backgroundImage: `
+        linear-gradient(rgba(180,158,138,0.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180,158,138,0.10) 1px, transparent 1px)
+      `,
+      backgroundSize: '28px 28px',
+      minHeight: '100vh',
+      color: C.text,
+    }}>
       {/* Nav */}
       <nav
         style={{
@@ -380,8 +389,10 @@ export default function TimelinePage() {
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          background: C.navBg,
-          backdropFilter: 'blur(10px)',
+          backgroundColor: C.bg,
+          backgroundImage: `linear-gradient(rgba(180,158,138,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(180,158,138,0.10) 1px, transparent 1px)`,
+          backgroundSize: '28px 28px',
+          backdropFilter: 'blur(2px)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
