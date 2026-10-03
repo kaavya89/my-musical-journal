@@ -29,68 +29,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="text-4xl mb-3">🎵</div>
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--foreground)' }}>
-            My Musical Journal
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-            Your year in music
-          </p>
+    <div className="pg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ marginBottom: 36 }}>
+          <h1 className="tl-display pg-h1" style={{ fontSize: 'clamp(38px, 8vw, 56px)', margin: 0 }}>Kaavya&apos;s login</h1>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
+            <label className="pg-label">Email</label>
             <input
               type="email"
-              placeholder="Email"
+              placeholder="name@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-              style={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                color: 'var(--foreground)',
-              }}
+              className="pg-field"
             />
           </div>
           <div>
+            <label className="pg-label">Password</label>
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-              style={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                color: 'var(--foreground)',
-              }}
+              className="pg-field"
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-400 text-center">{error}</p>
-          )}
+          {error && <p className="pg-err">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: loading ? 'var(--border)' : 'var(--accent)',
-              color: loading ? 'var(--muted)' : '#000',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
+          <div>
+            <button type="submit" className="pg-btn" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
