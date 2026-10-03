@@ -28,7 +28,7 @@ function groupByMonth(tracks: Track[]) {
   return groups
 }
 
-function TrackCard({ track, onDelete }: { track: Track; onDelete: (id: string) => void }) {
+function TrackCard({ track, onDelete, isOwner }: { track: Track; onDelete: (id: string) => void; isOwner: boolean }) {
   const [open, setOpen] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
 
@@ -106,16 +106,18 @@ function TrackCard({ track, onDelete }: { track: Track; onDelete: (id: string) =
                     YouTube ↗
                   </a>
                 )}
-                <button
-                  onClick={() => setShowDelete(!showDelete)}
-                  className="ml-auto text-xs px-3 py-2 rounded-xl"
-                  style={{ background: 'var(--border)', color: 'var(--muted)' }}>
-                  Remove
-                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => setShowDelete(!showDelete)}
+                    className="ml-auto text-xs px-3 py-2 rounded-xl"
+                    style={{ background: 'var(--border)', color: 'var(--muted)' }}>
+                    Remove
+                  </button>
+                )}
               </div>
 
-              {/* Delete confirm */}
-              {showDelete && (
+              {/* Delete confirm — owner only */}
+              {isOwner && showDelete && (
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>Are you sure?</span>
                   <button
@@ -143,10 +145,16 @@ function TrackCard({ track, onDelete }: { track: Track; onDelete: (id: string) =
 export default function TimelinePage() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [loading, setLoading] = useState(true)
+  const [isOwner, setIsOwner] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    // Check auth state
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsOwner(!!user)
+    })
+    // Fetch tracks (public)
     fetch('/api/tracks')
       .then(r => r.json())
       .then(data => { setTracks(data.tracks ?? []); setLoading(false) })
@@ -208,7 +216,7 @@ export default function TimelinePage() {
             </h2>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {grouped[month].map(track => (
-                <TrackCard key={track.id} track={track} onDelete={handleDelete} />
+                <TrackCard key={track.id} track={track} onDelete={handleDelete} isOwner={isOwner} />
               ))}
             </div>
           </section>
