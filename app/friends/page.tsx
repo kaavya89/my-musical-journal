@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import SiteHeader from '../components/SiteHeader'
 
 interface SearchResult {
   id: string
@@ -74,161 +75,138 @@ export default function FriendsPage() {
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
-        <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">🎶</div>
-          <h1 className="text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>
-            You&apos;re in!
-          </h1>
-          {selected && (
-            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl mx-auto w-fit" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-              {selected.thumbnail && (
-                <Image src={selected.thumbnail} alt={selected.title} width={40} height={40} className="rounded-md object-cover"/>
-              )}
-              <div className="text-left">
-                <div className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{selected.title}</div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>{selected.artist}</div>
+      <div className="pg">
+        <div className="pg-wrap">
+          <SiteHeader active="friends" />
+          <main className="pg-narrow">
+            <div className="pg-kicker">Song of the year</div>
+            <h1 className="tl-display pg-h1">You&apos;re in.</h1>
+            {selected && (
+              <div className="pg-pick" style={{ alignItems: 'center', width: 'fit-content', maxWidth: '100%', marginBottom: 24 }}>
+                {selected.thumbnail && (
+                  <Image src={selected.thumbnail} alt={selected.title} width={64} height={64} className="pg-thumb" />
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div className="pg-t">{selected.title}</div>
+                  <div className="pg-s">{selected.artist}</div>
+                </div>
               </div>
-            </div>
-          )}
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-            Your pick has been added. On December 31st, you&apos;ll get an email with a playlist of everyone&apos;s favourite songs from this year.
-          </p>
+            )}
+            <p className="pg-lede">
+              Your pick has been added. On December 31st, you&apos;ll get an email with a playlist of everyone&apos;s favourite songs from this year.
+            </p>
+          </main>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <div className="text-4xl mb-3">🎵</div>
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--foreground)' }}>
-            What&apos;s your song of the year?
-          </h1>
-          <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--muted)' }}>
+    <div className="pg">
+      <div className="pg-wrap">
+        <SiteHeader active="friends" />
+
+        <main className="pg-narrow">
+          <div className="pg-kicker">Song of the year</div>
+          <h1 className="tl-display pg-h1">What&apos;s your song of the year?</h1>
+          <p className="pg-lede">
             Share your favourite track and on Dec 31st, everyone gets a playlist of all the picks.
           </p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
-          <input
-            type="email"
-            placeholder="Your email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
-          />
-
-          {/* Search */}
-          {!selected && (
-            <div className="relative">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Email */}
+            <div>
+              <label className="pg-label">Your email</label>
               <input
-                type="text"
-                placeholder="Search for a song or album…"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                required={!selected}
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="pg-field"
               />
-              {searching && (
-                <span className="absolute right-4 top-3.5 text-xs" style={{ color: 'var(--muted)' }}>Searching…</span>
-              )}
             </div>
-          )}
 
-          {/* Results dropdown */}
-          {results.length > 0 && !selected && (
-            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-              {results.map((r, i) => (
-                <button
-                  key={r.id + i}
-                  type="button"
-                  onClick={() => { setSelected(r); setResults([]) }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:opacity-80"
-                  style={{
-                    background: 'var(--card)',
-                    borderBottom: i < results.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}
-                >
-                  {r.thumbnail ? (
-                    <Image src={r.thumbnail} alt={r.title} width={36} height={36} className="rounded-md object-cover flex-shrink-0"/>
-                  ) : (
-                    <div className="w-9 h-9 rounded-md flex-shrink-0 flex items-center justify-center text-base" style={{ background: 'var(--border)' }}>🎵</div>
+            {/* Search */}
+            {!selected && (
+              <div>
+                <label className="pg-label">Your song</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search for a song or album…"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    required={!selected}
+                    className="pg-field"
+                  />
+                  {searching && (
+                    <span className="pg-s" style={{ position: 'absolute', right: 18, top: 17 }}>Searching…</span>
                   )}
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{r.title}</div>
-                    <div className="text-xs truncate" style={{ color: 'var(--muted)' }}>
-                      {r.artist}{r.type === 'album' ? ' · Album' : r.album ? ` · ${r.album}` : ''}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Selected track */}
-          {selected && (
-            <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-              {selected.thumbnail ? (
-                <Image src={selected.thumbnail} alt={selected.title} width={48} height={48} className="rounded-lg object-cover flex-shrink-0"/>
-              ) : (
-                <div className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-xl" style={{ background: 'var(--border)' }}>🎵</div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{selected.title}</div>
-                <div className="text-xs truncate" style={{ color: 'var(--muted)' }}>{selected.artist}</div>
-                <div className="flex gap-3 mt-1">
-                  {selected.spotify_url && (
-                    <a href={selected.spotify_url} target="_blank" rel="noreferrer" className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
-                      Spotify ↗
-                    </a>
-                  )}
-                  <a href={selected.youtube_search_url} target="_blank" rel="noreferrer" className="text-xs" style={{ color: 'var(--muted)' }}>
-                    YouTube ↗
-                  </a>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => { setSelected(null); setQuery('') }}
-                className="text-xs flex-shrink-0 px-2 py-1 rounded-lg"
-                style={{ color: 'var(--muted)', background: 'var(--border)' }}
-              >
-                Change
+            )}
+
+            {/* Results */}
+            {results.length > 0 && !selected && (
+              <div className="pg-list">
+                {results.map((r, i) => (
+                  <button key={r.id + i} type="button" className="pg-row" onClick={() => { setSelected(r); setResults([]) }}>
+                    {r.thumbnail ? (
+                      <Image src={r.thumbnail} alt={r.title} width={44} height={44} className="pg-thumb" />
+                    ) : (
+                      <div className="pg-thumb-empty" style={{ width: 44, height: 44, fontSize: 18 }}>🎵</div>
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div className="pg-t">{r.title}</div>
+                      <div className="pg-s">
+                        {r.artist}{r.type === 'album' ? ' · Album' : r.album ? ` · ${r.album}` : ''}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Selected track */}
+            {selected && (
+              <div>
+                <label className="pg-label">Your song</label>
+                <div className="pg-pick" style={{ alignItems: 'center' }}>
+                  {selected.thumbnail ? (
+                    <Image src={selected.thumbnail} alt={selected.title} width={64} height={64} className="pg-thumb" />
+                  ) : (
+                    <div className="pg-thumb-empty" style={{ width: 64, height: 64, fontSize: 22 }}>🎵</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="pg-t">{selected.title}</div>
+                    <div className="pg-s">{selected.artist}</div>
+                    <div className="pg-links">
+                      {selected.spotify_url && (
+                        <a className="pg-spot" href={selected.spotify_url} target="_blank" rel="noreferrer">Spotify ↗</a>
+                      )}
+                      <a href={selected.youtube_search_url} target="_blank" rel="noreferrer">YouTube ↗</a>
+                    </div>
+                  </div>
+                  <button type="button" className="pg-ghost" onClick={() => { setSelected(null); setQuery('') }}>Change</button>
+                </div>
+              </div>
+            )}
+
+            {status === 'already' && <p className="pg-warn">You&apos;ve already submitted a pick from this email.</p>}
+            {status === 'error' && <p className="pg-err">Something went wrong. Try again.</p>}
+
+            <div>
+              <button type="submit" className="pg-btn" disabled={status === 'loading' || !selected}>
+                {status === 'loading' ? 'Submitting…' : 'Submit my pick'}
               </button>
             </div>
-          )}
+          </form>
 
-          {status === 'already' && (
-            <p className="text-sm text-amber-400 text-center">You&apos;ve already submitted a pick from this email.</p>
-          )}
-          {status === 'error' && (
-            <p className="text-sm text-red-400 text-center">Something went wrong. Try again.</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={status === 'loading' || !selected}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-            style={{
-              background: (status === 'loading' || !selected) ? 'var(--border)' : 'var(--accent)',
-              color: (status === 'loading' || !selected) ? 'var(--muted)' : '#000',
-              cursor: (status === 'loading' || !selected) ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {status === 'loading' ? 'Submitting…' : 'Submit my pick'}
-          </button>
-        </form>
-
-        <p className="text-center text-xs mt-6" style={{ color: 'var(--muted)' }}>
-          One submission per email · You&apos;ll hear from us on Dec 31st
-        </p>
+          <p className="pg-foot" style={{ marginTop: 28 }}>
+            One submission per email · You&apos;ll hear from us on Dec 31st
+          </p>
+        </main>
       </div>
     </div>
   )

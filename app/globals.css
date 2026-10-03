@@ -465,6 +465,88 @@ body {
 }
 [data-reveal].is-revealed { opacity: 1; transform: translateY(0); }
 
+/* ── Shared cream "notebook" pages (journal, friends) ── */
+.pg {
+  min-height: 100vh;
+  color: #2c2a24;
+  font-family: var(--fu);
+  background-color: #fbf6ef;
+  background-image:
+    linear-gradient(rgba(180, 158, 138, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 158, 138, 0.1) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.pg-wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px; box-sizing: border-box; }
+.pg-narrow { max-width: 640px; margin: 0 auto; padding: 56px 0 96px; }
+.pg-kicker { font: 600 12px/1 var(--fu); letter-spacing: 0.14em; text-transform: uppercase; color: #6f6253; margin-bottom: 16px; }
+.pg-h1 { margin: 0 0 14px; font-size: clamp(38px, 5.6vw, 72px); line-height: 0.98; text-wrap: balance; }
+.pg-lede { margin: 0 0 36px; font-family: var(--fn); font-style: italic; font-size: clamp(18px, 2vw, 22px); line-height: 1.55; color: #5b5145; max-width: 52ch; }
+.pg-label { display: block; font: 600 12px/1 var(--fu); letter-spacing: 0.12em; text-transform: uppercase; color: #6f6253; margin: 0 0 10px; }
+.pg-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(44, 42, 36, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  color: #2c2a24;
+  font: 500 16px/1.4 var(--fu);
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.pg-field::placeholder { color: #a39580; }
+.pg-field:focus { border-color: #2c2a24; background: rgba(255, 255, 255, 0.8); }
+.pg-notes { font-family: var(--fn); font-style: italic; font-size: 19px; line-height: 1.6; resize: vertical; min-height: 140px; }
+.pg-list { border: 1px solid rgba(44, 42, 36, 0.16); border-radius: 14px; overflow: hidden; background: #fbf6ef; }
+.pg-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(44, 42, 36, 0.1);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background-color 0.15s ease;
+}
+.pg-row:last-child { border-bottom: 0; }
+.pg-row:hover { background: rgba(44, 42, 36, 0.05); }
+.pg-thumb { border-radius: 4px; object-fit: cover; flex: none; box-shadow: 0 8px 18px -8px rgba(60, 40, 20, 0.45), 0 0 0 1px rgba(44, 42, 36, 0.06); }
+.pg-thumb-empty { display: flex; align-items: center; justify-content: center; background: #f0e8dc; border-radius: 4px; flex: none; }
+.pg-t { font: 600 16px/1.25 var(--fu); color: #2c2a24; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-s { font: 500 14px/1.4 var(--fu); color: #6f6253; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-pick { display: flex; align-items: flex-start; gap: 18px; padding: 18px; border-radius: 14px; border: 1px solid rgba(44, 42, 36, 0.16); background: rgba(255, 255, 255, 0.55); }
+.pg-links { display: flex; gap: 16px; margin-top: 10px; font: 600 13px/1 var(--fu); }
+.pg-links a { text-decoration: none; color: #6f6253; }
+.pg-links a:hover { color: #2c2a24; }
+.pg-links a.pg-spot { color: #14793a; }
+.pg-ghost { background: rgba(44, 42, 36, 0.07); border: 0; border-radius: 999px; padding: 8px 14px; font: 600 13px/1 var(--fu); color: #2c2a24; cursor: pointer; flex: none; }
+.pg-ghost:hover { background: rgba(44, 42, 36, 0.14); }
+.pg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 26px;
+  border-radius: 999px;
+  border: 0;
+  background: #2c2a24;
+  color: #fbf6ef;
+  font: 600 15px/1 var(--fu);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.pg-btn:hover:not(:disabled) { transform: translateY(-1px); background: #000; }
+.pg-btn:disabled { background: rgba(44, 42, 36, 0.12); color: #a39580; cursor: not-allowed; }
+.pg-ok { font: 600 15px/1.4 var(--fu); color: #14793a; }
+.pg-err { font: 500 14px/1.4 var(--fu); color: #b3261e; }
+.pg-warn { font: 500 14px/1.4 var(--fu); color: #8a5a00; }
+.pg-foot { font: 500 13px/1.5 var(--fu); color: #8c7e6e; }
+
 /* ── Responsive ── */
 @media (max-width: 1399px) {
   .tl-wrap { padding-right: 150px !important; }

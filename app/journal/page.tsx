@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import SiteHeader from '../components/SiteHeader'
 
 interface SearchResult {
   id: string
@@ -88,161 +89,100 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      {/* Nav */}
-      <nav className="border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-center gap-6">
-          <span className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>🎵 My Musical Journal</span>
-          <a href="/journal" className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Add Track</a>
-          <a href="/timeline" className="text-sm" style={{ color: 'var(--muted)' }}>Timeline</a>
-        </div>
-        <button onClick={handleSignOut} className="text-xs" style={{ color: 'var(--muted)' }}>
-          Sign out
-        </button>
-      </nav>
+    <div className="pg">
+      <div className="pg-wrap">
+        <SiteHeader active="journal" onSignOut={handleSignOut} />
 
-      <main className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>
-          What are you listening to?
-        </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>
-          Search by name or paste a Spotify link
-        </p>
+        <main className="pg-narrow">
+          <div className="pg-kicker">New entry</div>
+          <h1 className="tl-display pg-h1">What are you listening to?</h1>
+          <p className="pg-lede">Search by name or paste a Spotify link.</p>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <input
-            type="text"
-            value={query}
-            onChange={e => { setQuery(e.target.value); setSelected(null) }}
-            placeholder="Search for a track or album…"
-            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-            style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              color: 'var(--foreground)',
-            }}
-          />
-          {searching && (
-            <span className="absolute right-4 top-3.5 text-xs" style={{ color: 'var(--muted)' }}>
-              Searching…
-            </span>
-          )}
-        </div>
-
-        {/* Results */}
-        {results.length > 0 && !selected && (
-          <div className="rounded-xl overflow-hidden mb-6" style={{ border: '1px solid var(--border)' }}>
-            {results.map((r, i) => (
-              <button
-                key={r.id + i}
-                onClick={() => { setSelected(r); setResults([]) }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:opacity-80"
-                style={{
-                  background: 'var(--card)',
-                  borderBottom: i < results.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
-              >
-                {r.thumbnail ? (
-                  <Image src={r.thumbnail} alt={r.title} width={40} height={40} className="rounded-md object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-10 h-10 rounded-md flex-shrink-0 flex items-center justify-center text-lg" style={{ background: 'var(--border)' }}>
-                    🎵
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>{r.title}</div>
-                  <div className="text-xs truncate" style={{ color: 'var(--muted)' }}>
-                    {r.artist}{r.type === 'album' ? ' · Album' : r.album ? ` · ${r.album}` : ''}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Selected track */}
-        {selected && (
-          <div className="mb-6 rounded-xl p-4 flex items-start gap-4" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-            {selected.thumbnail ? (
-              <Image src={selected.thumbnail} alt={selected.title} width={72} height={72} className="rounded-lg object-cover flex-shrink-0" />
-            ) : (
-              <div className="w-18 h-18 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl" style={{ background: 'var(--border)' }}>
-                🎵
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{selected.title}</div>
-              <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{selected.artist}</div>
-              {selected.album && selected.type === 'track' && (
-                <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{selected.album}</div>
-              )}
-              <div className="flex gap-3 mt-2">
-                {selected.spotify_url && (
-                  <a href={selected.spotify_url} target="_blank" rel="noreferrer" className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
-                    Open in Spotify ↗
-                  </a>
-                )}
-                <a href={selected.youtube_search_url} target="_blank" rel="noreferrer" className="text-xs" style={{ color: 'var(--muted)' }}>
-                  YouTube ↗
-                </a>
-              </div>
-            </div>
-            <button onClick={() => { setSelected(null); setQuery('') }} className="text-xs flex-shrink-0" style={{ color: 'var(--muted)' }}>
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Notes */}
-        {selected && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-              How does this make you feel?
-            </label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Write anything — a memory, a feeling, what you love about it…"
-              rows={4}
-              className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-              style={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                color: 'var(--foreground)',
-              }}
+          {/* Search */}
+          <div style={{ position: 'relative', marginBottom: 24 }}>
+            <input
+              type="text"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setSelected(null) }}
+              placeholder="Search for a track or album…"
+              className="pg-field"
             />
+            {searching && (
+              <span className="pg-s" style={{ position: 'absolute', right: 18, top: 17 }}>Searching…</span>
+            )}
           </div>
-        )}
 
-        {/* Actions */}
-        {selected && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{
-                background: saving ? 'var(--border)' : 'var(--accent)',
-                color: saving ? 'var(--muted)' : '#000',
-                cursor: saving ? 'not-allowed' : 'pointer',
-              }}
-            >
+          {/* Results */}
+          {results.length > 0 && !selected && (
+            <div className="pg-list" style={{ marginBottom: 24 }}>
+              {results.map((r, i) => (
+                <button key={r.id + i} className="pg-row" onClick={() => { setSelected(r); setResults([]) }}>
+                  {r.thumbnail ? (
+                    <Image src={r.thumbnail} alt={r.title} width={44} height={44} className="pg-thumb" />
+                  ) : (
+                    <div className="pg-thumb-empty" style={{ width: 44, height: 44, fontSize: 18 }}>🎵</div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="pg-t">{r.title}</div>
+                    <div className="pg-s">
+                      {r.artist}{r.type === 'album' ? ' · Album' : r.album ? ` · ${r.album}` : ''}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Selected track */}
+          {selected && (
+            <div className="pg-pick" style={{ marginBottom: 28 }}>
+              {selected.thumbnail ? (
+                <Image src={selected.thumbnail} alt={selected.title} width={88} height={88} className="pg-thumb" />
+              ) : (
+                <div className="pg-thumb-empty" style={{ width: 88, height: 88, fontSize: 28 }}>🎵</div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="tl-display" style={{ fontSize: 24, lineHeight: 1.1 }}>{selected.title}</div>
+                <div className="pg-s" style={{ marginTop: 6 }}>{selected.artist}</div>
+                {selected.album && selected.type === 'track' && (
+                  <div className="pg-s">{selected.album}</div>
+                )}
+                <div className="pg-links">
+                  {selected.spotify_url && (
+                    <a className="pg-spot" href={selected.spotify_url} target="_blank" rel="noreferrer">Open in Spotify ↗</a>
+                  )}
+                  <a href={selected.youtube_search_url} target="_blank" rel="noreferrer">YouTube ↗</a>
+                </div>
+              </div>
+              <button className="pg-ghost" onClick={() => { setSelected(null); setQuery('') }}>Change</button>
+            </div>
+          )}
+
+          {/* Notes */}
+          {selected && (
+            <div style={{ marginBottom: 28 }}>
+              <label className="pg-label">How does this make you feel?</label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Write anything — a memory, a feeling, what you love about it…"
+                rows={5}
+                className="pg-field pg-notes"
+              />
+            </div>
+          )}
+
+          {/* Actions */}
+          {selected && (
+            <button className="pg-btn" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : 'Save to journal'}
             </button>
-          </div>
-        )}
+          )}
 
-        {saved && (
-          <div className="mt-4 text-sm font-medium" style={{ color: 'var(--accent)' }}>
-            ✓ Added to your journal
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-4 text-sm text-red-400">{error}</div>
-        )}
-      </main>
+          {saved && <div className="pg-ok" style={{ marginTop: 18 }}>✓ Added to your journal</div>}
+          {error && <div className="pg-err" style={{ marginTop: 18 }}>{error}</div>}
+        </main>
+      </div>
     </div>
   )
 }

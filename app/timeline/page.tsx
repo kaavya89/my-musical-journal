@@ -377,6 +377,7 @@ export default function TimelinePage() {
             <nav aria-label="Primary" style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
               <a className="tl-nav tl-nav-on" href="/timeline" aria-current="page">Timeline</a>
               <a className="tl-nav" href="/journal">Add track</a>
+              <a className="tl-nav" href="/friends">Friends</a>
               {isOwner && (
                 <button className="tl-nav" onClick={handleSignOut}>Sign out</button>
               )}
