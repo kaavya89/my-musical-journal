@@ -123,7 +123,7 @@ function TrackDrawer({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop + centering container */}
       <div
         onClick={onClose}
         style={{
@@ -131,23 +131,25 @@ function TrackDrawer({
           inset: 0,
           zIndex: 40,
           background: 'rgba(44,42,36,0.28)',
-          backdropFilter: 'blur(3px)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
         }}
-      />
-
-      {/* Drawer panel */}
+      >
+      {/* Centered panel */}
       <div
         className="drawer-enter"
+        onClick={e => e.stopPropagation()}
         style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 50,
-          width: '400px',
-          maxWidth: '100vw',
+          width: '100%',
+          maxWidth: '420px',
+          maxHeight: '88vh',
+          borderRadius: '20px',
           ...gridBg,
-          borderLeft: `0.5px solid ${C.border}`,
+          border: `0.5px solid ${C.border}`,
+          boxShadow: '0 24px 56px rgba(44,42,36,0.20)',
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
@@ -298,6 +300,7 @@ function TrackDrawer({
             </div>
           )}
         </div>
+      </div>
       </div>
     </>
   )
