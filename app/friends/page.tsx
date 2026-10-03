@@ -180,31 +180,35 @@ export default function FriendsPage() {
     if (chosen.length === 0) return
     setStatus('loading')
 
-    const res = await fetch('/api/friends', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        picks: chosen.map(s => {
-          const p = picks[s.key]!
-          return {
-            category: s.key,
-            song_name: p.title,
-            artist_name: p.artist,
-            spotify_url: p.spotify_url,
-            thumbnail_url: p.thumbnail,
-            youtube_search_url: p.youtube_search_url,
-          }
+    try {
+      const res = await fetch('/api/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          picks: chosen.map(s => {
+            const p = picks[s.key]!
+            return {
+              category: s.key,
+              song_name: p.title,
+              artist_name: p.artist,
+              spotify_url: p.spotify_url,
+              thumbnail_url: p.thumbnail,
+              youtube_search_url: p.youtube_search_url,
+            }
+          }),
         }),
-      }),
-    })
+      })
 
-    const data = await res.json()
-    if (res.ok) {
-      setStatus('success')
-    } else if (data.error === 'already_submitted') {
-      setStatus('already')
-    } else {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setStatus('success')
+      } else if (data.error === 'already_submitted') {
+        setStatus('already')
+      } else {
+        setStatus('error')
+      }
+    } catch {
       setStatus('error')
     }
   }

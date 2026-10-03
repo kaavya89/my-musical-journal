@@ -13,7 +13,13 @@ interface Pick {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createAdminClient()
+  let supabase
+  try {
+    supabase = createAdminClient()
+  } catch (err) {
+    console.error('Friends API: admin client unavailable', err)
+    return NextResponse.json({ error: 'Server is missing its database key.' }, { status: 500 })
+  }
   const body = await request.json()
   const { email, picks } = body as { email?: string; picks?: Pick[] }
 
