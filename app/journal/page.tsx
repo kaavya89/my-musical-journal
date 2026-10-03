@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import SiteHeader from '../components/SiteHeader'
 
@@ -27,8 +25,6 @@ export default function JournalPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const router = useRouter()
-  const supabase = createClient()
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) { setResults([]); return }
@@ -83,15 +79,10 @@ export default function JournalPage() {
     setSaving(false)
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   return (
     <div className="pg">
       <div className="pg-wrap">
-        <SiteHeader active="journal" onSignOut={handleSignOut} />
+        <SiteHeader active="journal" />
 
         <main className="pg-narrow">
           <div className="pg-kicker">New entry</div>

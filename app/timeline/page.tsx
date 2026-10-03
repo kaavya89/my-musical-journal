@@ -376,7 +376,7 @@ export default function TimelinePage() {
             </div>
             <nav aria-label="Primary" style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
               <a className="tl-nav tl-nav-on" href="/timeline" aria-current="page">Timeline</a>
-              <a className="tl-nav" href="/journal">Add track</a>
+              {isOwner && <a className="tl-nav" href="/journal">Add track</a>}
               <a className="tl-nav" href="/friends">Friends</a>
               {isOwner && (
                 <button className="tl-nav" onClick={handleSignOut}>Sign out</button>
@@ -439,9 +439,11 @@ export default function TimelinePage() {
         {!loading && total > 0 && (
           <footer style={{ padding: '64px 0 96px', borderTop: '1px solid rgba(44,42,36,.12)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
             <div style={{ fontFamily: 'var(--fn)', fontStyle: 'italic', fontSize: 26, color: '#5b5145' }}>More to come.</div>
-            <a href="/journal" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 24px', borderRadius: 999, background: '#2c2a24', color: '#fbf6ef', textDecoration: 'none', font: '600 15px/1 var(--fu)' }}>
-              Add a track
-            </a>
+            {isOwner && (
+              <a href="/journal" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 24px', borderRadius: 999, background: '#2c2a24', color: '#fbf6ef', textDecoration: 'none', font: '600 15px/1 var(--fu)' }}>
+                Add a track
+              </a>
+            )}
           </footer>
         )}
       </div>
