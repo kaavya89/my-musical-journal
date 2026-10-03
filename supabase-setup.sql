@@ -38,16 +38,6 @@ create table if not exists public.friend_submissions (
 -- Enable Row Level Security
 alter table public.friend_submissions enable row level security;
 
--- Anyone can insert (submit their song)
-create policy "Anyone can submit" on public.friend_submissions
-  for insert
-  with check (true);
-
--- Anyone can read their own row (to check for duplicates via the API)
-create policy "Anyone can read by email" on public.friend_submissions
-  for select
-  using (true);
-
 -- Only authenticated users (you) can update/delete
 create policy "Owner can manage" on public.friend_submissions
   for all
