@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://music.kaavyasrinivasan.com"),
   title: "My Musical Journal",
   description: "A personal record of music that moved me",
+  openGraph: {
+    title: "My Musical Journal",
+    description: "A personal record of music that moved me",
+    images: [{ url: "/icon-512.png", width: 512, height: 512 }],
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
