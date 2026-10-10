@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server is missing its database key.' }, { status: 500 })
   }
   const body = await request.json()
-  const { email, picks } = body as { email?: string; picks?: Pick[] }
+  const { name, email, picks } = body as { name?: string; email?: string; picks?: Pick[] }
+
+  const cleanName = typeof name === 'string' ? name.trim().slice(0, 80) : ''
+  if (!cleanName) {
+    return NextResponse.json({ error: 'Name is required.' }, { status: 400 })
+  }
 
   if (!Array.isArray(picks) || picks.length === 0) {
     return NextResponse.json({ error: 'Add at least one pick.' }, { status: 400 })
@@ -53,6 +58,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.from('friend_submissions').insert(
     picks.map(p => ({
+      name: cleanName,
       email: cleanEmail,
       category: p.category,
       song_name: p.song_name.trim(),

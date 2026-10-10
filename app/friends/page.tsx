@@ -159,6 +159,7 @@ function PickField({
 
 export default function FriendsPage() {
   const [step, setStep] = useState<1 | 2>(1)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [picks, setPicks] = useState<Record<Category, SearchResult | null>>({
     song: null,
@@ -185,6 +186,7 @@ export default function FriendsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name,
           email,
           picks: chosen.map(s => {
             const p = picks[s.key]!
@@ -219,7 +221,7 @@ export default function FriendsPage() {
         <div className="pg-wrap">
           <SiteHeader active="friends" />
           <main className="pg-narrow">
-            <h1 className="tl-display pg-h1">You&apos;re in.</h1>
+            <h1 className="tl-display pg-h1">You&apos;re in, {name.trim().split(' ')[0]}.</h1>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
               {chosen.map(s => {
                 const p = picks[s.key]!
@@ -262,23 +264,41 @@ export default function FriendsPage() {
                 I have three questions in the next slide, each for a specific music choice. You can answer 1, 2, or all three.
               </p>
 
-              <div style={{ marginBottom: 36 }}>
-                <label className="pg-label">Your email (optional)</label>
-                <input
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="pg-field"
-                />
-                <p className="pg-foot" style={{ margin: '10px 0 0' }}>
-                  If you provide one, all music choices will be emailed to you on December 31st.
-                </p>
-              </div>
+              <form
+                onSubmit={e => { e.preventDefault(); goTo(2) }}
+              >
+                <div style={{ marginBottom: 28 }}>
+                  <label className="pg-label">Your name</label>
+                  <input
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    maxLength={80}
+                    autoComplete="name"
+                    className="pg-field"
+                  />
+                </div>
 
-              <button type="button" className="pg-btn" onClick={() => goTo(2)}>
-                Continue
-              </button>
+                <div style={{ marginBottom: 36 }}>
+                  <label className="pg-label">Your email (optional)</label>
+                  <input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="pg-field"
+                  />
+                  <p className="pg-foot" style={{ margin: '10px 0 0' }}>
+                    If you provide one, all music choices will be emailed to you on December 31st.
+                  </p>
+                </div>
+
+                <button type="submit" className="pg-btn">
+                  Continue
+                </button>
+              </form>
             </div>
           ) : (
             <form key="slide-2" className="dt-up" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
